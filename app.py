@@ -4,7 +4,7 @@ from flask import Flask, jsonify, render_template, request
 
 app = Flask(__name__)
 HOST = os.environ.get("UFW_WEB_HOST", "127.0.0.1")
-PORT = int(os.environ.get("UFW_WEB_PORT", "8088"))
+PORT = int(os.environ.get("UFW_WEB_PORT", "8099"))
 UFW = "/usr/sbin/ufw"
 SUDO = "/usr/bin/sudo"
 

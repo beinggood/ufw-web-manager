@@ -3,185 +3,58 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>UFW Web Manager · 1.1</title>
+<title>UFW Web Manager 1.1</title>
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-
+<main>
 <header>
-  <div class="title-row">
-    <div class="brand-mark">UFW</div>
-    <div>
-      <h1>Web Manager<small>1.1</small></h1>
-      <p class="sub">Ubuntu Server 防火墙管理</p>
-    </div>
-  </div>
-  <div class="buttons">
-    <span id="statusPill" class="status-pill"><span class="dot"></span>检测中</span>
-    <button class="icon-btn ghost" id="refreshBtn" onclick="spinRefresh(this); reloadAll()" title="刷新数据">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-    </button>
-    <button class="ghost" onclick="withLoading(this, () => doAction('/api/reload'))">重载</button>
-  </div>
+  <div><h1>UFW Web Manager <small>1.1</small></h1><p>Ubuntu Server 防火墙管理</p></div>
+  <div class="buttons"><button onclick="reloadAll()">刷新</button><button onclick="doAction('/api/reload')">重载</button></div>
 </header>
 
-<div class="shell">
-
-  <nav class="sidenav" id="sidenav">
-    <span class="nav-indicator" id="navIndicator"></span>
-    <button class="nav-item is-active" data-view="overview" onclick="switchView('overview', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>
-      <span>概览</span>
-    </button>
-    <button class="nav-item" data-view="rules" onclick="switchView('rules', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
-      <span>规则</span>
-    </button>
-    <button class="nav-item" data-view="add" onclick="switchView('add', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
-      <span>新增规则</span>
-    </button>
-  </nav>
-
-  <main class="content">
-
-    <!-- ================= 概览 ================= -->
-    <section class="view is-active" data-view="overview">
-      <div class="view-head"><h2>概览</h2><p>运行状态与默认策略</p></div>
-
-      <div class="card">
-        <h3>运行状态</h3>
-        <div class="console">
-          <div class="prompt"><span class="who">root@ufw</span><span class="path">:~#</span><span class="cmd">&nbsp;ufw status verbose</span><span class="cursor"></span></div>
-          <pre id="status">加载中…</pre>
-        </div>
-        <div class="buttons">
-          <button class="primary" onclick="withLoading(this, enableUfw)">
-            <span class="btn-label">启用 UFW</span><span class="spinner"></span>
-          </button>
-          <button class="danger" onclick="withLoading(this, disableUfw)">
-            <span class="btn-label">禁用 UFW</span><span class="spinner"></span>
-          </button>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3>默认策略</h3>
-        <div class="policy-grid">
-          <div class="policy-row">
-            <label>入站</label>
-            <div class="segmented" data-name="incoming">
-              <span class="segmented-indicator"></span>
-              <input type="radio" name="incoming" id="in-allow" value="allow"><label for="in-allow">allow</label>
-              <input type="radio" name="incoming" id="in-deny" value="deny" checked><label for="in-deny">deny</label>
-              <input type="radio" name="incoming" id="in-reject" value="reject"><label for="in-reject">reject</label>
-            </div>
-          </div>
-          <div class="policy-row">
-            <label>出站</label>
-            <div class="segmented" data-name="outgoing">
-              <span class="segmented-indicator"></span>
-              <input type="radio" name="outgoing" id="out-allow" value="allow" checked><label for="out-allow">allow</label>
-              <input type="radio" name="outgoing" id="out-deny" value="deny"><label for="out-deny">deny</label>
-              <input type="radio" name="outgoing" id="out-reject" value="reject"><label for="out-reject">reject</label>
-            </div>
-          </div>
-          <div class="policy-row">
-            <label>转发</label>
-            <div class="segmented" data-name="routed">
-              <span class="segmented-indicator"></span>
-              <input type="radio" name="routed" id="rt-allow" value="allow"><label for="rt-allow">allow</label>
-              <input type="radio" name="routed" id="rt-deny" value="deny" checked><label for="rt-deny">deny</label>
-              <input type="radio" name="routed" id="rt-reject" value="reject"><label for="rt-reject">reject</label>
-            </div>
-          </div>
-        </div>
-        <button class="primary" onclick="withLoading(this, savePolicies)">
-          <span class="btn-label">应用默认策略</span><span class="spinner"></span>
-        </button>
-      </div>
-    </section>
-
-    <!-- ================= 规则 ================= -->
-    <section class="view" data-view="rules">
-      <div class="view-head">
-        <div><h2>规则</h2><p>当前生效的防火墙规则</p></div>
-        <button class="ghost icon-btn" onclick="spinRefresh(this); loadRules()" title="刷新规则">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-        </button>
-      </div>
-
-      <div class="card">
-        <div id="ruleCards" class="rule-cards"><div class="empty-hint">加载中…</div></div>
-
-        <button class="ghost toggle-raw" id="toggleRawBtn" onclick="toggleRawOutput()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-          显示原始输出
-        </button>
-        <div class="collapsible" id="rawCollapsible">
-          <div class="collapsible-inner">
-            <div class="console" style="margin:12px 0 0">
-              <div class="prompt"><span class="who">root@ufw</span><span class="path">:~#</span><span class="cmd">&nbsp;ufw status numbered</span><span class="cursor"></span></div>
-              <pre id="rules">加载中…</pre>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ================= 新增规则 ================= -->
-    <section class="view" data-view="add">
-      <div class="view-head"><h2>新增规则</h2><p>填写条件后添加一条新的防火墙规则</p></div>
-
-      <div class="card">
-        <div class="field-row">
-          <label>动作</label>
-          <div class="segmented tone-segmented" data-name="action">
-            <span class="segmented-indicator"></span>
-            <input type="radio" name="action" id="act-allow" value="allow" checked><label for="act-allow" data-tone="allow">允许</label>
-            <input type="radio" name="action" id="act-deny" value="deny"><label for="act-deny" data-tone="deny">拒绝</label>
-            <input type="radio" name="action" id="act-reject" value="reject"><label for="act-reject" data-tone="deny">拒绝并回应</label>
-            <input type="radio" name="action" id="act-limit" value="limit"><label for="act-limit" data-tone="limit">限速</label>
-          </div>
-        </div>
-
-        <div class="field-row">
-          <label>方向</label>
-          <div class="segmented" data-name="direction">
-            <span class="segmented-indicator"></span>
-            <input type="radio" name="direction" id="dir-any" value="" checked><label for="dir-any">任意</label>
-            <input type="radio" name="direction" id="dir-in" value="in"><label for="dir-in">入站</label>
-            <input type="radio" name="direction" id="dir-out" value="out"><label for="dir-out">出站</label>
-          </div>
-        </div>
-
-        <div class="field-row">
-          <label>协议</label>
-          <div class="segmented" data-name="protocol">
-            <span class="segmented-indicator"></span>
-            <input type="radio" name="protocol" id="proto-any" value="" checked><label for="proto-any">任意</label>
-            <input type="radio" name="protocol" id="proto-tcp" value="tcp"><label for="proto-tcp">tcp</label>
-            <input type="radio" name="protocol" id="proto-udp" value="udp"><label for="proto-udp">udp</label>
-          </div>
-        </div>
-
-        <div class="formgrid">
-          <label class="input-label">端口<input id="port" placeholder="22 / 80,443 / 8000:9000"></label>
-          <label class="input-label">来源<input id="from" value="any" placeholder="any / 192.168.1.0/24"></label>
-          <label class="input-label">目标<input id="to" value="any" placeholder="any / 10.0.0.1"></label>
-          <label class="input-label wide">备注<input id="comment" maxlength="100" placeholder="可选，便于日后识别这条规则"></label>
-        </div>
-
-        <button class="primary" onclick="withLoading(this, addRule)">
-          <span class="btn-label">添加规则</span><span class="spinner"></span>
-        </button>
-      </div>
-    </section>
-
-  </main>
+<section class="grid">
+<div class="card">
+<h2>状态</h2><pre id="status">加载中...</pre>
+<div class="buttons"><button class="primary" onclick="enableUfw()">启用 UFW</button><button class="danger" onclick="disableUfw()">禁用 UFW</button></div>
 </div>
+<div class="card">
+<h2>默认策略</h2>
+<div class="formgrid">
+<label>入站<select id="incoming"><option>allow</option><option selected>deny</option><option>reject</option></select></label>
+<label>出站<select id="outgoing"><option selected>allow</option><option>deny</option><option>reject</option></select></label>
+<label>转发<select id="routed"><option>allow</option><option selected>deny</option><option>reject</option></select></label>
+</div>
+<button onclick="savePolicies()">应用默认策略</button>
+</div>
+</section>
 
+<section class="card">
+<h2>添加规则</h2>
+<div class="formgrid">
+<label>动作<select id="action"><option value="allow">允许</option><option value="deny">拒绝</option><option value="reject">Reject</option><option value="limit">Limit</option></select></label>
+<label>方向<select id="direction"><option value="">任意</option><option value="in">入站</option><option value="out">出站</option></select></label>
+<label>端口<input id="port" placeholder="22 / 80,443 / 8000:9000"></label>
+<label>协议<select id="protocol"><option value="">任意</option><option>tcp</option><option>udp</option></select></label>
+<label>来源<input id="from" value="any" placeholder="any / 192.168.1.0/24"></label>
+<label>目标<input id="to" value="any" placeholder="any / 10.0.0.1"></label>
+<label class="wide">备注<input id="comment" maxlength="100" placeholder="可选"></label>
+</div>
+<button class="primary" onclick="addRule()">添加规则</button>
+</section>
+
+<section class="card">
+<div class="head"><h2>当前规则</h2><button onclick="loadRules()">刷新</button></div>
+<pre id="rules">加载中...</pre>
+</section>
+
+<section class="card">
+<h2>删除规则</h2>
+<div class="buttons"><input id="ruleNumber" type="number" min="1" placeholder="规则编号"><button class="danger" onclick="deleteRule()">删除</button></div>
+<p class="hint">删除前请确认 numbered rule 编号。删除后 UFW 会重新编号。</p>
+</section>
 <div id="toast"></div>
+</main>
 <script src="/static/app.js"></script>
 </body>
 </html>

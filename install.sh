@@ -10,51 +10,56 @@ APP_USER="ufwweb"
 command -v apt-get >/dev/null || { echo "此安装程序面向 Ubuntu/Debian 系统。"; exit 1; }
 
 # ---------------------------------------------------------------------------
-# 交互式配置：监听端口 / 监听地址
-# 可通过环境变量 UFW_WEB_PORT / UFW_WEB_LISTEN_ALL 跳过交互（用于自动化安装）。
+# 交互式选择监听地址和端口
+# 支持通过环境变量 UFW_WEB_HOST / UFW_WEB_PORT 预设值以便无人值守安装
+# （例如 sudo UFW_WEB_HOST=0.0.0.0 UFW_WEB_PORT=8099 bash install.sh）。
+# 若未预设且脚本运行在非交互终端（无 stdin），则直接使用默认值。
 # ---------------------------------------------------------------------------
-DEFAULT_PORT=8088
+LISTEN_HOST="${UFW_WEB_HOST:-}"
+LISTEN_PORT="${UFW_WEB_PORT:-}"
 
-if [[ -n "${UFW_WEB_PORT:-}" ]]; then
-  APP_PORT="$UFW_WEB_PORT"
-elif [[ -t 0 ]]; then
-  read -rp "请输入程序监听端口 [默认 ${DEFAULT_PORT}]: " APP_PORT
-  APP_PORT="${APP_PORT:-$DEFAULT_PORT}"
-else
-  APP_PORT="$DEFAULT_PORT"
+is_valid_port() {
+    [[ "$1" =~ ^[0-9]{1,5}$ ]] && (( 10#$1 >= 1 && 10#$1 <= 65535 ))
+}
+
+if [[ -z "$LISTEN_HOST" ]] && [[ -t 0 ]]; then
+    echo "程序监听地址："
+    echo "  1) 127.0.0.1  仅本机访问，推荐配合 SSH 隧道 (默认)"
+    echo "  2) 0.0.0.0    局域网/公网可访问 —— 当前版本没有登录认证，"
+    echo "                 任何能连到该端口的人都可以直接操作防火墙！"
+    read -r -p "请选择 [1/2] (默认 1): " host_choice
+    case "${host_choice:-1}" in
+        1|"") LISTEN_HOST="127.0.0.1" ;;
+        2)
+            LISTEN_HOST="0.0.0.0"
+            read -r -p "确认要监听 0.0.0.0，允许非本机连接？请输入 yes 确认: " confirm
+            if [[ "$confirm" != "yes" ]]; then
+                echo "已取消，改为使用 127.0.0.1。"
+                LISTEN_HOST="127.0.0.1"
+            fi
+            ;;
+        *) echo "无效选择，使用默认值 127.0.0.1。"; LISTEN_HOST="127.0.0.1" ;;
+    esac
+elif [[ -z "$LISTEN_HOST" ]]; then
+    LISTEN_HOST="127.0.0.1"
 fi
 
-if ! [[ "$APP_PORT" =~ ^[0-9]+$ ]] || (( APP_PORT < 1 || APP_PORT > 65535 )); then
-  echo "无效端口: $APP_PORT，使用默认值 ${DEFAULT_PORT}。"
-  APP_PORT="$DEFAULT_PORT"
-fi
-
-if [[ -n "${UFW_WEB_LISTEN_ALL:-}" ]]; then
-  case "${UFW_WEB_LISTEN_ALL,,}" in
-    1|y|yes|true) LISTEN_ALL=1 ;;
-    *) LISTEN_ALL=0 ;;
-  esac
-elif [[ -t 0 ]]; then
-  read -rp "是否监听所有网络接口 0.0.0.0（否则仅监听 127.0.0.1，更安全）？[y/N]: " ans
-  case "${ans,,}" in
-    y|yes) LISTEN_ALL=1 ;;
-    *) LISTEN_ALL=0 ;;
-  esac
-else
-  LISTEN_ALL=0
-fi
-
-if [[ "$LISTEN_ALL" -eq 1 ]]; then
-  APP_HOST="0.0.0.0"
-else
-  APP_HOST="127.0.0.1"
+if [[ -z "$LISTEN_PORT" ]] && [[ -t 0 ]]; then
+    read -r -p "请输入监听端口 (1-65535，默认 8099): " port_input
+    LISTEN_PORT="${port_input:-8099}"
+    if ! is_valid_port "$LISTEN_PORT"; then
+        echo "端口无效，使用默认值 8099。"
+        LISTEN_PORT="8099"
+    fi
+elif [[ -z "$LISTEN_PORT" ]]; then
+    LISTEN_PORT="8099"
+elif ! is_valid_port "$LISTEN_PORT"; then
+    echo "环境变量 UFW_WEB_PORT=$LISTEN_PORT 无效，使用默认值 8099。"
+    LISTEN_PORT="8099"
 fi
 
 echo
-echo "将使用配置: 监听地址=${APP_HOST}  端口=${APP_PORT}"
-if [[ "$LISTEN_ALL" -eq 1 ]]; then
-  echo "警告: 监听 0.0.0.0 会将管理界面暴露到所有网络接口，请确保已设置好访问控制/防火墙规则。"
-fi
+echo "将使用监听地址: $LISTEN_HOST  端口: $LISTEN_PORT"
 echo
 
 apt-get update
@@ -87,8 +92,8 @@ fi
 
 chown -R "$APP_USER:$APP_USER" "$INSTALL_DIR"
 
-sed -e "s/^Environment=UFW_WEB_HOST=.*/Environment=UFW_WEB_HOST=${APP_HOST}/" \
-    -e "s/^Environment=UFW_WEB_PORT=.*/Environment=UFW_WEB_PORT=${APP_PORT}/" \
+sed -e "s/__UFW_WEB_HOST__/${LISTEN_HOST}/" \
+    -e "s/__UFW_WEB_PORT__/${LISTEN_PORT}/" \
     ufw-web-manager.service > /tmp/ufw-web-manager.service.rendered
 install -m 0644 /tmp/ufw-web-manager.service.rendered /etc/systemd/system/ufw-web-manager.service
 rm -f /tmp/ufw-web-manager.service.rendered
@@ -97,12 +102,33 @@ systemctl daemon-reload
 systemctl enable "$SERVICE"
 systemctl restart "$SERVICE"
 
+# 获取本机真实 IPv4 地址（排除回环），用于安装完成后展示可访问的真实地址
+get_real_ips() {
+    if command -v ip >/dev/null 2>&1; then
+        ip -4 -o addr show scope global 2>/dev/null | awk '{print $4}' | cut -d/ -f1
+    elif command -v hostname >/dev/null 2>&1; then
+        hostname -I 2>/dev/null | tr ' ' '\n' | grep -v '^127\.' | grep -v '^$'
+    fi
+}
+
 echo
 echo "=== UFW Web Manager 1.1 安装完成 ==="
-if [[ "$APP_HOST" == "0.0.0.0" ]]; then
-  echo "地址: http://<本机IP>:${APP_PORT}/  (已监听所有接口)"
+if [[ "$LISTEN_HOST" == "0.0.0.0" ]]; then
+    echo "已监听所有网络接口，可通过以下地址访问（请注意安全，当前无登录认证）："
+    echo "  http://127.0.0.1:${LISTEN_PORT}/   (本机)"
+    mapfile -t real_ips < <(get_real_ips)
+    if [[ ${#real_ips[@]} -eq 0 ]]; then
+        echo "  未能自动探测到本机局域网/公网 IP，请自行执行 'ip addr' 查看。"
+    else
+        for ip_addr in "${real_ips[@]}"; do
+            echo "  http://${ip_addr}:${LISTEN_PORT}/   (真实IP)"
+        done
+    fi
 else
-  echo "地址: http://127.0.0.1:${APP_PORT}/"
+    echo "地址: http://${LISTEN_HOST}:${LISTEN_PORT}/"
+    echo
+    echo "如需从其他机器访问，推荐使用 SSH 隧道："
+    echo "  ssh -L ${LISTEN_PORT}:127.0.0.1:${LISTEN_PORT} user@本机真实IP"
 fi
 echo
 echo "验证 sudo 权限:"
