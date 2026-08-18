@@ -1,5 +1,5 @@
 # UFW Web Manager
-
+![UFW_screenshot](https://raw.githubusercontent.com/beinggood/ufw-web-manager/refs/heads/main/ufw_sreenshot.png)
 轻量级的 Ubuntu/Debian UFW（Uncomplicated Firewall）Web 管理面板。用浏览器代替记忆 `ufw` 命令行参数，适合远程 Linux 服务器的日常防火墙管理。
 
 ![Python](https://img.shields.io/badge/python-3-blue)
