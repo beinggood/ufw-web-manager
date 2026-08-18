@@ -1,0 +1,4 @@
+# UFW Web Manager 1.1
+# The web application user can ONLY run the UFW executable as root.
+# It cannot use sudo for bash, sh, systemctl, apt, etc.
+ufwweb ALL=(root) NOPASSWD: /usr/sbin/ufw

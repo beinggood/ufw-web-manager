@@ -1,0 +1,24 @@
+[Unit]
+Description=UFW Web Manager 1.1
+After=network.target ufw.service
+Wants=ufw.service
+
+[Service]
+Type=simple
+User=ufwweb
+Group=ufwweb
+WorkingDirectory=/opt/ufw-web-manager
+Environment=UFW_WEB_HOST=0.0.0.0
+Environment=UFW_WEB_PORT=8088
+ExecStart=/opt/ufw-web-manager/.venv/bin/python /opt/ufw-web-manager/app.py
+Restart=on-failure
+RestartSec=3
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/etc/ufw
+ProtectHome=true
+# IMPORTANT: Do not enable NoNewPrivileges=true here.
+# The application must use sudo -n to run /usr/sbin/ufw as root.
+
+[Install]
+WantedBy=multi-user.target
