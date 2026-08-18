@@ -1,12 +1,185 @@
-:root{color-scheme:dark;--bg:#0d1117;--card:#161b22;--line:#30363d;--text:#e6edf3;--muted:#8b949e;--blue:#2f81f7;--red:#da3633}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
-main{max-width:1180px;margin:auto;padding:28px}header,.head{display:flex;justify-content:space-between;align-items:center}
-h1{margin:0;font-size:28px}h1 small{font-size:13px;color:var(--muted)}h2{font-size:18px;margin:0 0 16px}p,.hint{color:var(--muted)}
-.grid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px}
-.formgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}.wide{grid-column:span 3}
-label{display:flex;flex-direction:column;gap:7px;color:var(--muted);font-size:14px}
-input,select,button{font:inherit;border:1px solid var(--line);border-radius:7px;background:#0d1117;color:var(--text);padding:9px 11px}
-button{cursor:pointer}button:hover{border-color:#8b949e}.primary{background:var(--blue);border-color:var(--blue);color:white}.danger{background:var(--red);border-color:var(--red);color:white}
-.buttons{display:flex;gap:10px;align-items:center}pre{font:13px ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;overflow:auto;background:#0d1117;padding:14px;border-radius:8px;line-height:1.5;min-height:80px}
-#toast{display:none;position:fixed;right:20px;bottom:20px;padding:12px 16px;border-radius:8px;background:#21262d;border:1px solid var(--line);max-width:500px}
-@media(max-width:800px){.grid,.formgrid{grid-template-columns:1fr}.wide{grid-column:auto}header{flex-direction:column;align-items:flex-start;gap:15px}}
+/* ============================================================
+   UFW Web Manager — 视觉基调："哨所 / Gatehouse"
+   深石墨结构 + 暖黄铜信号色，呼应实体门禁/闸机指示灯的意象。
+   ============================================================ */
+
+:root{
+  --radius:9px;
+  --radius-lg:14px;
+  --brass:#c2883f;
+  --brass-strong:#a86f2c;
+  --signal-green:#3f9d6c;
+  --signal-red:#c1503f;
+  --font-sans:system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;
+}
+
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0c1210;
+  --surface:#131c19;
+  --surface-2:#0a100e;
+  --line:#25332d;
+  --ink:#e8ede9;
+  --muted:#8aa196;
+  --brass-accent:#d99f52;
+  --shadow:0 1px 0 rgba(0,0,0,.4);
+}
+
+:root[data-theme="light"]{
+  color-scheme:light;
+  --bg:#eef1ec;
+  --surface:#ffffff;
+  --surface-2:#e6eae3;
+  --line:#d4dad1;
+  --ink:#141a17;
+  --muted:#5c6b63;
+  --brass-accent:#a86f2c;
+  --shadow:0 1px 2px rgba(20,26,23,.06);
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--font-sans);
+  transition:background .2s ease,color .2s ease;
+}
+
+main{max-width:1180px;margin:auto;padding:28px}
+
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;gap:16px}
+.head{display:flex;justify-content:space-between;align-items:center}
+
+.brand{display:flex;align-items:center;gap:14px}
+.brand__mark{
+  width:14px;height:14px;border-radius:3px;flex:none;
+  background:linear-gradient(155deg,var(--brass) 0%,var(--brass-strong) 100%);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--brass) 18%,transparent);
+}
+
+h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-0.02em}
+h1 small{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.04em;vertical-align:2px}
+h2{font-size:16px;margin:0 0 16px;font-weight:650;letter-spacing:-0.01em;display:flex;align-items:center;gap:9px}
+p,.hint{color:var(--muted);margin:2px 0 0;font-size:14px}
+
+.kicker{
+  font-family:var(--font-mono);
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.12em;
+  color:var(--brass-accent);
+  margin-bottom:8px;
+}
+
+.grid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}
+
+.card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius-lg);
+  padding:20px;
+  margin-bottom:16px;
+  box-shadow:var(--shadow);
+  transition:background .2s ease,border-color .2s ease;
+}
+
+.formgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
+.wide{grid-column:span 3}
+
+label{display:flex;flex-direction:column;gap:7px;color:var(--muted);font-size:13px}
+
+input,select,button{
+  font:inherit;
+  border:1px solid var(--line);
+  border-radius:7px;
+  background:var(--surface-2);
+  color:var(--ink);
+  padding:9px 11px;
+}
+input:focus-visible,select:focus-visible,button:focus-visible{
+  outline:2px solid var(--brass);
+  outline-offset:1px;
+}
+
+button{cursor:pointer;font-weight:600;transition:border-color .15s ease,transform .05s ease}
+button:hover{border-color:var(--brass-accent)}
+button:active{transform:translateY(1px)}
+
+.primary{background:var(--brass);border-color:var(--brass);color:#1a1206}
+.primary:hover{background:var(--brass-strong);border-color:var(--brass-strong)}
+.danger{background:var(--signal-red);border-color:var(--signal-red);color:#fff1ee}
+.danger:hover{filter:brightness(1.08)}
+
+.buttons{display:flex;gap:10px;align-items:center}
+
+pre{
+  font:13px var(--font-mono);
+  white-space:pre-wrap;
+  overflow:auto;
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  padding:14px;
+  border-radius:8px;
+  line-height:1.55;
+  min-height:80px;
+  color:var(--ink);
+}
+
+/* 信号灯：呼应门禁闸机的实体状态指示灯 */
+.led{
+  width:9px;height:9px;border-radius:50%;flex:none;
+  background:var(--muted);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--muted) 20%,transparent);
+  transition:background .3s ease,box-shadow .3s ease;
+}
+.led.is-active{
+  background:var(--signal-green);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--signal-green) 25%,transparent),0 0 10px color-mix(in srgb,var(--signal-green) 60%,transparent);
+  animation:pulse 2.4s ease-in-out infinite;
+}
+.led.is-inactive{
+  background:var(--signal-red);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--signal-red) 22%,transparent);
+}
+@keyframes pulse{
+  0%,100%{opacity:1}
+  50%{opacity:.55}
+}
+@media (prefers-reduced-motion:reduce){.led.is-active{animation:none}}
+
+/* 深浅模式切换：拟物为门禁上的拨动开关 */
+.switch{
+  padding:0;border:1px solid var(--line);background:var(--surface-2);
+  border-radius:999px;width:52px;height:28px;position:relative;overflow:hidden;
+}
+.switch__track{display:block;width:100%;height:100%;position:relative}
+.switch__thumb{
+  position:absolute;top:2px;left:2px;
+  width:22px;height:22px;border-radius:50%;
+  background:var(--brass);
+  display:flex;align-items:center;justify-content:center;
+  transition:left .2s ease,background .2s ease;
+  color:#1a1206;
+}
+:root[data-theme="dark"] .switch__thumb{left:26px;background:#1c2622;color:var(--brass-accent)}
+.icon{width:13px;height:13px;position:absolute}
+.icon--sun{opacity:1}
+.icon--moon{opacity:0}
+:root[data-theme="dark"] .icon--sun{opacity:0}
+:root[data-theme="dark"] .icon--moon{opacity:1}
+
+#toast{
+  display:none;position:fixed;right:20px;bottom:20px;
+  padding:12px 16px;border-radius:8px;
+  background:var(--surface);border:1px solid var(--line);
+  color:var(--ink);max-width:500px;box-shadow:0 8px 24px rgba(0,0,0,.18);
+}
+
+@media(max-width:800px){
+  .grid,.formgrid{grid-template-columns:1fr}
+  .wide{grid-column:auto}
+  header{flex-direction:column;align-items:flex-start;gap:15px}
+}

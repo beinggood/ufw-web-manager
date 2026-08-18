@@ -1,6 +1,18 @@
+function toggleTheme(){
+  const root=document.documentElement;
+  const next=root.getAttribute("data-theme")==="dark"?"light":"dark";
+  root.setAttribute("data-theme",next);
+  try{localStorage.setItem("ufw-theme",next)}catch(e){}
+}
 async function api(url, options={}){const r=await fetch(url,{headers:{"Content-Type":"application/json"},...options});return await r.json()}
-function toast(s,ok=true){const e=document.getElementById("toast");e.textContent=s;e.style.display="block";e.style.borderColor=ok?"#3fb950":"#da3633";setTimeout(()=>e.style.display="none",3500)}
-async function loadStatus(){const d=await api("/api/status");document.getElementById("status").textContent=d.stdout||d.stderr||"无输出"}
+function toast(s,ok=true){const e=document.getElementById("toast");e.textContent=s;e.style.display="block";e.style.borderColor=ok?"var(--signal-green)":"var(--signal-red)";setTimeout(()=>e.style.display="none",3500)}
+function setStatusLed(text){
+  const led=document.getElementById("statusLed");if(!led)return;
+  led.classList.remove("is-active","is-inactive");
+  if(/status:\s*active/i.test(text))led.classList.add("is-active");
+  else if(/status:\s*inactive/i.test(text))led.classList.add("is-inactive");
+}
+async function loadStatus(){const d=await api("/api/status");const text=d.stdout||d.stderr||"无输出";document.getElementById("status").textContent=text;setStatusLed(text)}
 async function loadRules(){const d=await api("/api/rules");document.getElementById("rules").textContent=d.stdout||d.stderr||"无输出"}
 async function reloadAll(){await Promise.all([loadStatus(),loadRules()])}
 async function doAction(url){const d=await api(url,{method:"POST",body:"{}"});toast(d.ok?"操作成功":d.stderr,d.ok);reloadAll()}
